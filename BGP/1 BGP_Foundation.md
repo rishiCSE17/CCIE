@@ -82,3 +82,39 @@ _"BGP does not enable one AS to send traffic to a neighbour AS intending to that
 route from that, taken by traffic originating in the neighbour AS"_
 >   Easy : You can't tell your neighbour what to do with their traffic. <br>
 >   the sent packet can be replied through a completely different path. (although path can te influenced)
+
+# Chapter 2 : BGP Session Establishment 
+* BGP relationship facts
+* BGP packets and process
+* Configuring BGP
+
+## BGP Neighborship Formation 
+* Router never discover each other line IGP : 
+    * in an IGP when someone puts a `network [net-id]` commands 3 things happen 
+        1. router finds (an) interface(s) with IP matching that net-id
+        2. sends hello with handshaking parameters through them
+        3. advertises the network address configured on them (not the net-id)
+    * in BGP neighbourship is manual (no hallo)
+* Neighbours must be reachable on TCP port 179 : Mind your Firewall rules ! 
+* multiple BGP session is not permitted (unlike OSPF/EIGRP)
+* `Network` Command works differently with BGP :
+    * If you want redundant link on your neighbour, adding the neighbour twice won't help, BGP will drop it.
+    * To do that add a loopback interface. 
+    * Add two static routes `ip route [loopback-ip] [remote1]` and `ip route [loopback-ip] [remote2]`
+    * neighbour to the __loopback ip__
+    * BGP will see two same cost route, and starts load balancing with Round-Robin 
+    * _BGP uses foundation principles of IGP to operate_
+    
+## BHP Packets
+1. __Open__ : Similar to Hello (Sent once)
+2. __Update__: Route Updates 
+3. __Keep Alive__: relies on TCP keepalive to maintain connection (Periodic). 
+TCP can be very quite thus to tell am I dead ot there's nothing going on 
+4. __Notification__: Something's wrong
+
+## BGP States
+1. __Idle__ : I've a neighbour configured, I haven't tried to talk to him
+2. __Active__ : I'm trying to break the communication (Prob: No response, no reachability) 
+3. __Open Sent__ : Open is sent 
+4. __Open Confirm__: Open is recieved 
+6. __Ehtablished__: Done!
