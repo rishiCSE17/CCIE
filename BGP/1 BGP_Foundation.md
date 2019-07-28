@@ -118,3 +118,84 @@ TCP can be very quite thus to tell am I dead ot there's nothing going on
 3. __Open Sent__ : Open is sent 
 4. __Open Confirm__: Open is recieved 
 6. __Ehtablished__: Done!
+
+## BGP Lab 
+
+### Autonomous System Number 
+* __Private ASN__ : 64512 - 65535
+* __Public ASN__ : 1 - 64511
+![](pics/bgp_lab_1.png)
+
+### Interface Config 
+__ISP1__
+~~~
+conf t
+
+!---------------------------------------------
+! Interace Config 
+!---------------------------------------------
+	int f0/0
+	ip add 150.1.1.1 255.255.255.252 
+	no sh
+	
+	int l0
+	ip add 151.0.0.1 255.255.255.0
+exit
+!---------------------------------------------
+! Static Route Config 
+!---------------------------------------------
+	ip route 200.0.0.0 255.255.255.0 f0/0
+end
+wr
+~~~
+__ISP2__
+~~~
+conf t
+
+!---------------------------------------------
+! Interace Config 
+!---------------------------------------------
+	int f0/0
+	ip add 150.1.1.5 255.255.255.252 
+	no sh
+	
+	int l0
+	ip add 152.0.0.1 255.255.255.0
+exit
+!---------------------------------------------
+! Static Route Config 
+!---------------------------------------------
+	ip route 200.0.0.0 255.255.255.0 f0/0	
+end
+wr
+~~~
+__R1__
+~~~
+conf t
+
+!---------------------------------------------
+! Interace Config 
+!---------------------------------------------
+	int f0/0
+	ip add 150.1.1.2 255.255.255.252 
+	no sh
+	
+	int f0/1
+	ip add 150.1.1.6 255.255.255.252 
+	no sh
+	
+	int l0
+	ip add 200.0.0.1 255.255.255.0
+exit	
+!---------------------------------------------
+! Static Route Config 
+!---------------------------------------------
+	ip route 151.0.0.0 255.255.255.0 f0/0
+	ip route 152.0.0.0 255.255.255.0 f0/1
+end
+wr
+~~~
+
+### BGP Cnfiguration
+* __Start the BGP Process__
+`router bgp [asn]`
