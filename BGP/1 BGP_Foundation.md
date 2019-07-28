@@ -144,8 +144,8 @@ exit
 !---------------------------------------------
 ! BGP Config 
 !---------------------------------------------
-	router bgp 111 
-	nei 150.1.1.2 remote-as 500
+	router bgp 111                 ! start BGP Process
+	nei 150.1.1.2 remote-as 500    ! Add a neighbour 
 end
 wr
 ~~~
@@ -199,6 +199,40 @@ end
 wr
 ~~~
 
-### BGP Cnfiguration
-* __Start the BGP Process__
-`router bgp [asn]`
+### BGP Message Exchange 
+* Wireshark capture on f0/0 interface of R1
+
+    ![](pics/nei_cap2.png)
+    
+* Debug of BGP process `debug ip bgp all` on R1 
+    ~~~
+    *Mar  1 00:03:48.299: BGP: 150.1.1.1 passive open to 150.1.1.2
+    *Mar  1 00:03:48.299: BGP: 150.1.1.1 went from Idle to Connect
+    *Mar  1 00:03:48.307: BGP: 150.1.1.1 rcv message type 1, length (excl. header) 26
+    *Mar  1 00:03:48.307: BGP: 150.1.1.1 rcv OPEN, version 4, holdtime 180 seconds
+    *Mar  1 00:03:48.311: BGP: 150.1.1.1 went from Connect to OpenSent
+    *Mar  1 00:03:48.311: BGP: 150.1.1.1 sending OPEN, version 4, my as: 500, holdtime 180 second                                                                                                s
+    *Mar  1 00:03:48.311: BGP: 150.1.1.1 rcv OPEN w/ OPTION parameter len: 16
+    *Mar  1 00:03:48.311: BGP: 150.1.1.1 rcvd OPEN w/ optional parameter type 2 (Capability) len                                                                                                 6
+    *Mar  1 00:03:48.311: BGP: 150.1.1.1 OPEN has CAPABILITY code: 1, length 4
+    *Mar  1 00:03:48.315: BGP: 150.1.1.1 OPEN has MP_EXT CAP for afi/safi: 1/1
+    *Mar  1 00:03:48.315: BGP: 150.1.1.1 rcvd OPEN w/ optional parameter type 2 (Capability) len                                                                                                 2
+    *Mar  1 00:03:48.315: BGP: 150.1.1.1 OPEN has CAPABILITY code: 128, length 0
+    *Mar  1 00:03:48.315: BGP: 150.1.1.1 OPEN has ROUTE-REFRESH capability(old) for all address-f                                                                                                amilies
+    *Mar  1 00:03:48.315: BGP: 150.1.1.1 rcvd OPEN w/ optional parameter type 2 (Capability) len                                                                                                 2
+    *Mar  1 00:03:48.319: BGP: 150.1.1.1 OPEN has CAPABILITY code: 2, length 0
+    *Mar  1 00:03:48.319: BGP: 150.1.1.1 OPEN has ROUTE-REFRESH capability(new) for all address-f                                                                                                amilies
+    BGP: 150.1.1.1 rcvd OPEN w/ remote AS 111
+    *Mar  1 00:03:48.319: BGP: 150.1.1.1 went from OpenSent to OpenConfirm
+    *Mar  1 00:03:48.319: BGP: 150.1.1.1 send message type 1, length (incl. header) 45
+    *Mar  1 00:03:48.339: BGP: 150.1.1.1 went from OpenConfirm to Established
+    *Mar  1 00:03:48.339: %BGP-5-ADJCHANGE: neighbor 150.1.1.1 Up
+    ~~~
+
+### Verify BGP Summary 
+* `sh ip bgp summary `
+    ~~~
+    Neighbor        V    AS MsgRcvd MsgSent   TblVer  InQ OutQ Up/Down  State/PfxRcd
+    150.1.1.1       4   111       5       5        1    0    0 00:02:29        0
+    150.1.1.5       4   222       4       4        1    0    0 00:01:47        0
+    ~~~
