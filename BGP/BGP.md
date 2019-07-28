@@ -62,9 +62,23 @@ __Fast IGP__
       * to run BGP you need a high performance router (min 512MB), for routers its a lot. 
 3. If you don't have enough bandwidth to sync with BGP. BGP RFC gives measure (no of routes - BW)
 4. You don't understand BGP 
-      * possible to redistribute BGP routes into IGP routes - _Blow your router_\
+      * possible to redistribute BGP routes into IGP routes - _Blow your router_
       
 ## When to use BGP
 1. you need HA through multiple ISP 
 2. you are an ISP 
 3. Extremely large network to connect different branch or partner enterprises. 
+
+## BGP Resume
+1. Reliable Updates (TCP based : port 179)
+2. Triggered (event based) Updates only [5 sec internal(iBGP) / 30 sec external (eBGP)] 
+3. Complex Metric for finding best route (13 attributes). Top down in the attribute list until the tie breaks 
+4. Manually setup neighbour (`neighbour` command sends a __open__ message no auto discovery)  
+5. Complex Filters are typically used, to be __Sceptical__ about info coming from neighbours 
+6. [Bonus] : you can do anything with filter config 
+
+## The Golden Rule
+_"BGP does not enable one AS to send traffic to a neighbour AS intending to that the traffic takes a different 
+route from that, taken by traffic originating in the neighbour AS"_
+>   Easy : You can't tell your neighbour what to do with their traffic. <br>
+>   the sent packet can be replied through a completely different path. (although path can te influenced)
