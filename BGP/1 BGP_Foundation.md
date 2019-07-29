@@ -130,7 +130,6 @@ TCP can be very quite thus to tell am I dead ot there's nothing going on
 __ISP1__
 ~~~
 conf t
-
 !---------------------------------------------
 ! Interace Config 
 !---------------------------------------------
@@ -144,15 +143,15 @@ exit
 !---------------------------------------------
 ! BGP Config 
 !---------------------------------------------
-	router bgp 111                 ! start BGP Process
-	nei 150.1.1.2 remote-as 500    ! Add a neighbour 
+	router bgp 111 			  !Turning BGP On with ASN
+	nei 150.1.1.2 remote-as 500	  !Adding Neighbour Manually
+	net 151.0.0.0 mask 255.255.255.0  !Advertising network
 end
 wr
 ~~~
 __ISP2__
 ~~~
 conf t
-
 !---------------------------------------------
 ! Interace Config 
 !---------------------------------------------
@@ -168,13 +167,13 @@ exit
 !---------------------------------------------
 	router bgp 222
 	nei 150.1.1.6 remote-as 500
+	net 152.0.0.0 mask 255.255.255.0
 end
 wr
 ~~~
 __R1__
 ~~~
 conf t
-
 !---------------------------------------------
 ! Interace Config 
 !---------------------------------------------
@@ -195,6 +194,7 @@ exit
 	router bgp 500
 	nei 150.1.1.1 remote-as 111
 	nei 150.1.1.5 remote-as 222
+	net 200.0.0.0 mask 255.255.255.0
 end
 wr
 ~~~
@@ -230,9 +230,74 @@ wr
     ~~~
 
 ### Verify BGP Summary 
-* `sh ip bgp summary `
+* `sh ip bgp summary ` : make sure the state is a number (the nombe of routes it learns... )
     ~~~
     Neighbor        V    AS MsgRcvd MsgSent   TblVer  InQ OutQ Up/Down  State/PfxRcd
-    150.1.1.1       4   111       5       5        1    0    0 00:02:29        0
-    150.1.1.5       4   222       4       4        1    0    0 00:01:47        0
+    150.1.1.1       4   111      31      33        4    0    0 00:27:21        1
+    150.1.1.5       4   222      31      33        4    0    0 00:27:25        1
+    ~~~
+    
+* `sh ip route bgp` : see the route learnd from BGP (From ISP1)
+    ~~~
+         152.0.0.0/24 is subnetted, 1 subnets
+    B       152.0.0.0 [20/0] via 150.1.1.5, 00:08:21
+        151.0.0.0/24 is subnetted, 1 subnets
+    B       151.0.0.0 [20/0] via 150.1.1.1, 00:13:32
+    ~~~
+    
+* `sh ip bgp` : shows the BGP Topology table 
+    ~~~
+    BGP table version is 4, local router ID is 200.0.0.1
+    Status codes: s suppressed, d damped, h history, * valid, > best, i - internal,
+                  r RIB-failure, S Stale
+    Origin codes: i - IGP, e - EGP, ? - incomplete
+    
+       Network          Next Hop            Metric LocPrf Weight Path
+    *> 151.0.0.0/24     150.1.1.1                0             0 111   i
+    *> 152.0.0.0/24     150.1.1.5                0             0 222   i
+    *> 200.0.0.0        0.0.0.0                  0               32768 i
+    ~~~
+
+## BGP Metric 
+Cisco call it BGP route Selection process. it checks in the following order 
+1. Largest Weight - cisco prop. (see topology table)
+2. Highest Local Preference - set by admin (see topology table)
+3. Locally Originated - if its originated from your AS 
+4. Shortest AS Path - Strongest manipulation you can do 
+5. Lowest Origin type (i < e < ?) : internal < external < Unknown source (incomplete)
+6. Lowest MED (Metric) : 
+7. eBGP over iBGP
+8. Lowest IGP metric to neighbour (Max paths check) : 
+    * by default BGP doesnt do Load balaning 
+    * if [1-8] all attributes tie, it'll try to pick a best route using 9,10
+    * `max path [n]` is a command that dictates how many simulating paths can be used (n >= 2)
+9. Older Route
+10. Lowest Router ID 
+
+## Influencing BGP Route 
+* The weight attribute is a cisco propreatory attribute. but it's not shared 
+* use the weight attribute to leverage any neighbour 
+* command `neighbor [nei-ip] weight [w] `
+    ~~~
+    R1(config)#router bgp 500
+    R1(config-router)#neighbor 150.1.1.1 weight 10
+    
+    R1(config-router)#do sh ip bgp
+    BGP table version is 4, local router ID is 200.0.0.1
+    Status codes: s suppressed, d damped, h history, * valid, > best, i - internal,
+                  r RIB-failure, S Stale
+    Origin codes: i - IGP, e - EGP, ? - incomplete
+    
+       Network          Next Hop            Metric LocPrf Weight Path
+    *> 151.0.0.0/24     150.1.1.1                0             0 111 i
+    *> 152.0.0.0/24     150.1.1.5                0             0 222 i
+    *> 200.0.0.0        0.0.0.0                  0         32768 i
+    ~~~
+* No change !! , weight is considered as a filter. anytime a filter is altered 
+BGP process has to be clear (Caution ! Don't do in production) with `clear ip bgp *`
+
+    ~~~
+       Network          Next Hop            Metric LocPrf Weight Path
+    *> 151.0.0.0/24     150.1.1.1                0            10 111 i
+    *> 152.0.0.0/24     150.1.1.5                0             0 222 i
     ~~~
