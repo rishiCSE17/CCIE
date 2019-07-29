@@ -274,7 +274,7 @@ Cisco call it BGP route Selection process. it checks in the following order
 9. Older Route
 10. Lowest Router ID 
 
-## Influencing BGP Route 
+### Influencing BGP Route 
 * The weight attribute is a cisco propreatory attribute. but it's not shared 
 * use the weight attribute to leverage any neighbour 
 * command `neighbor [nei-ip] weight [w] `
@@ -301,3 +301,24 @@ BGP process has to be clear (Caution ! Don't do in production) with `clear ip bg
     *> 151.0.0.0/24     150.1.1.1                0            10 111 i
     *> 152.0.0.0/24     150.1.1.5                0             0 222 i
     ~~~
+
+## BGP Advertisement mechanism 
+### BGP is a DVRP 
+* By def, in DVRP router only learns routes from its neighbours
+* Unlike LSRP where it creates a huge topology table for every router
+* for the Scale of routes BGP handles an LSRP mechanism just wouldn't work 
+* hence BGP is a DVRP 
+
+there are 2 ways of advertising routes
+
+### 1. The `network` Command 
+* unlike the network command in IGP, in BGP _it takes a route from an existing routing table and advertises on BGP_
+* for any route originating locally cisco will put a static weight 32768 
+* net will be known this tagged by (i)
+* Syntax : `network [exact-net] mask [mask]` 
+    * exact-net will be looked on routing table (Unlike IGPs)
+    * mask is optional if net-id is classful 
+
+### 2.  the `redistribute` Command 
+* use `redistribute connected` under router-bgp config mode 
+* nets will be unknown and tagged by (?) 
