@@ -360,7 +360,7 @@ B       10.1.0.0 [20/0] via 150.1.1.2, 00:03:46
      150.1.0.0/30 is subnetted, 2 subnets
 B       150.1.1.4 [20/0] via 150.1.1.2, 00:04:16
 ~~~
-
+ 
 to prevent this to happen, use __access/distribution list__ on r1
 ~~~
   do sh ip route con                         !see all connected routes
@@ -378,3 +378,36 @@ B    200.0.0.0/24 [20/0] via 150.1.1.2, 00:09:19
      150.1.0.0/30 is subnetted, 2 subnets
 B       150.1.1.4 [20/0] via 150.1.1.2, 00:09:49
 ~~~
+
+# Chapter 3 : BGP Attributes
+* what are attributes
+* Well-known Bgp attribites
+* Optional BGP attributes
+
+## what is BGP attributes
+* characteristics attached to every route that's advertised 
+* often used by BGP route selection process (except weight, as it's not advertised)
+* Can be standard (well-known) or proprietary (optional)
+
+## Well known attribute (Industry standard)
+### Mandatory attributes (Have to be in the updates)
+* __Origin__ : where did this route come from
+    > * i : generated internally (default network command)
+    > * e : generated EGP 
+    > * ? : unknown origin (redistributed)
+* __AS-Path__ : How many AS the route has passed through 
+    > * every time a packet passes through, upon exit its stamped (Like Passport)
+    > * BGP's loop prevention mechanism (most important reason to make internet distbuted)
+* __Next hop  Address__ : different than a typical next-hop 
+
+### Discretionary (optional) Attributes (don't have to be their)
+* __Local preferecne__ :
+* __Atomic Aggregation__ : a type of summary 
+
+## Optional (Optionally Supported / procreatory)
+* __Multi-Exit Desciminator (MED)__ : suggestion to your neighbour, asking for favour 
+    > * non transitive : Once the packet leaves the AS, MED is stripped off 
+    > * Another word "Metric" (Confusing !!) _this is not the metric of BGP, it's the list_ 
+
+* __Aggregator__ : who did aggregation 
+* __Community__ : BGP system within BGP system 
