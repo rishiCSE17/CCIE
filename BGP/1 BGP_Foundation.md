@@ -322,3 +322,59 @@ there are 2 ways of advertising routes
 ### 2.  the `redistribute` Command 
 * use `redistribute connected` under router-bgp config mode 
 * nets will be unknown and tagged by (?) 
+
+    ~~~
+       Network          Next Hop            Metric LocPrf Weight Path
+    *> 150.1.1.0/30     0.0.0.0                  0         32768 ?
+    *> 150.1.1.4/30     150.1.1.2                              0 500 222 ?
+    *> 151.0.0.0/24     0.0.0.0                  0         32768 ?
+    *> 152.0.0.0/24     150.1.1.2                              0 500 222 ?
+    ~~~
+
+### Need to use route filter 
+prevent yourself from being a transit router (letting other ISP's routes pass through you). 
+
+lets add some private networks on R1 Loopback interface 
+~~~
+R1#sh ip int br | ex unass
+Interface                  IP-Address      OK? Method Status                Protocol
+FastEthernet0/0            150.1.1.2       YES NVRAM  up                    up
+FastEthernet0/1            150.1.1.6       YES NVRAM  up                    up
+Loopback0                  200.0.0.1       YES NVRAM  up                    up
+Loopback1                  10.1.0.1        YES manual up                    up
+Loopback2                  10.2.0.1        YES manual up                    up
+Loopback3                  10.3.0.1        YES manual up                    up
+~~~
+
+with `redistribute connected` all the private nets will also be advertised to the neighbour.
+e.g. from ISP 1
+~~~
+ISP1#sh ip route bgp
+     152.0.0.0/24 is subnetted, 1 subnets
+B       152.0.0.0 [20/0] via 150.1.1.2, 00:04:16
+B    200.0.0.0/24 [20/0] via 150.1.1.2, 00:03:46
+     10.0.0.0/24 is subnetted, 3 subnets
+B       10.2.0.0 [20/0] via 150.1.1.2, 00:03:46
+B       10.3.0.0 [20/0] via 150.1.1.2, 00:03:46
+B       10.1.0.0 [20/0] via 150.1.1.2, 00:03:46
+     150.1.0.0/30 is subnetted, 2 subnets
+B       150.1.1.4 [20/0] via 150.1.1.2, 00:04:16
+~~~
+
+to prevent this to happen, use __access/distribution list__ on r1
+~~~
+  do sh ip route con                         !see all connected routes
+  access-list 10 permit 200.0.0.0 0.0.0.255  !permit 200.0.0.0/24
+  access-list 10 permit 150.0.0.0 0.0.0.3    !permit 150.0.0.0/30
+  router bgp 500    
+  distribute-list 10 out connected           !filter all C routes with ACL10 b4 goin out
+~~~
+now check on ISP1
+~~~
+ISP1#sh ip route bgp
+     152.0.0.0/24 is subnetted, 1 subnets
+B       152.0.0.0 [20/0] via 150.1.1.2, 00:09:49
+B    200.0.0.0/24 [20/0] via 150.1.1.2, 00:09:19
+     150.1.0.0/30 is subnetted, 2 subnets
+B       150.1.1.4 [20/0] via 150.1.1.2, 00:09:49
+~~~
