@@ -411,3 +411,59 @@ B       150.1.1.4 [20/0] via 150.1.1.2, 00:09:49
 
 * __Aggregator__ : who did aggregation 
 * __Community__ : BGP system within BGP system 
+
+# Chapter 4 : Route Map
+* What is Route Map ?
+* Uses of route map in BGP
+* Route Map configuration / application 
+
+## What is Route Map 
+* An ordered list of statements processed similar to an access list
+* perform a series of IF/THEN statements, cisco calls (__MATCH/SET__)
+* Typically Used for 
+    > * Modifying BGP attributes
+    > * Policy Routing (PBR)
+    > * Route Filtering 
+* Configured from GLobal Config `route map [name]`
+* if you just create a map like this, it'll crate a permit entry with seq number 10
+    ~~~
+    R1(config)#route-map set_bgp_map
+    R1(config-route-map)#do sh route-map
+    route-map set_bgp_map, permit, sequence 10
+      Match clauses:
+      Set clauses:
+      Policy routing matches: 0 packets, 0 bytes
+    ~~~
+    >* Permit/deny : Access Control statement 
+* Route-map is used to set a policy such that, by __matching__ a set with some condition then __set__ something... 
+## Usage : Matching is based on Access-list
+    ~~~
+    ip access-list stand [acl_name]
+        permit [ip] [mask]
+    exit
+    route-map [name] [permit|deny] [seq number]
+        match ip address [acl_name]
+        set [action]
+    ~~~
+* example
+    ~~~
+      ip access-list standard match_2_route
+        permit 2.2.0.0 0.0.255.255
+      exit
+          route-map set_bgp_map permit 10
+          match ip address match_2_route
+      exit
+      do sh route-map
+      R1(config-route-map)#do sh route-map
+        route-map set_bgp_map, permit, sequence 10
+          Match clauses:
+            ip address (access-lists): match_2_route
+          Set clauses:
+          Policy routing matches: 0 packets, 0 bytes
+        route-map set_bgp_map, permit, sequence 100
+          Match clauses:
+          Set clauses:
+          Policy routing matches: 0 packets, 0 bytes
+    ~~~
+ * Adding multiple match statement under sequence number : AND
+ * Adding multiple match statement in one line : OR
