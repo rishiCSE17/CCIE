@@ -401,3 +401,28 @@ sh spanning-tree inconsistenceport
   as hubs don't use spanning tree, hence __no bpdu__
 
 ## Protecting against sudden loss of BPDU
+* I can't see BPDU, perhaps upstream switch or link is dead but it can change blocking to unblock port
+* what if misunderstanding 
+### Loop guard
+* keep track on bpdu on non-designated ports
+* when RP stops receiving BPDU, it is made __inconsistent__ port 
+* BP that receives BPDU is made RP/DP 
+* `spanning-tree loopguard-default` block port of __offending VLAN__ only
+
+### UDLD (unidirectional Link Detection)
+* Cisco Prop 
+* typically used in Fiber (its not likely for ethernet to become unidirectional)
+* UDLD verifies if the link is really bidirectional (using echo, sent by Tx, received by Rx)
+* timer = 15sec, Max = 3X15=45sec (max must be lower than STP combined timer)
+* Two Modes 
+    > * Normal Mode : Default operation 
+    > * Aggresive Mode : sends 8 packets in 8 secs if a echo fails 
+* UDLD and etherchannel : UDLD only disables link selectively from the etherchannel bundle
+
+## BPDU filter to disable STP on a port  
+typically used in lab environment for testing 
+`spanning-tree portfast bpdufilter default`
+
+# RSTP & MSTP (Rapid/multiple Spanning Tree)
+## RSTP 
+* 802.1d 
