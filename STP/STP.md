@@ -1,4 +1,6 @@
-# Spanning Tree Protocol 
+Spanning Tree Protocol 
+======================
+
 # STP Basics
 ### Redundancy and Loops
 * Prevents switching loops 
@@ -62,7 +64,7 @@ due to data filter, switch stops receiving BPDU, delay of (20 + 2 + 15 + 15 ) 52
 ### Per-VLAN Spanning tree (PVST)
 * Spanning tree for each VLAN (Each VLAN logically gets its own RB)
 
-## STP Lab
+# STP Lab
 
 ### Reference Topology 
 ![](pics/ref_topo.png)
@@ -293,6 +295,109 @@ sw0#sh spanning-tree detail | inc Br
   Bridge Identifier has priority 32768, sysid 1, address aabb.cc00.0100
 ~~~
 
+### Altering per-VLAN RB
+* Make sw0 as RB of VLAN 100
+* make sw3 as RB of VLAN 200
 
+~~~
+sw0(config)#spanning-tree vlan 100 root primary 
+~~~
+~~~
+sw3(config)#spanning-tree vlan 200 root primary 
+~~~
 
-### make sw3 a Root bridge 
+### Some commonly used command 
+~~~
+sh spanning-tree vlan [id]
+~~~
+~~~
+sh spanning-tree interface e0/1 ?             
+  active         Report on active instances only
+  cost           Port path cost
+  detail         Detailed information
+  inconsistency  Port inconsistency state
+  portfast       Portfast operational status
+  priority       Port priority
+  rootcost       Path cost to root
+  state          Port spanning tree state
+  |              Output modifiers
+  <cr>
+~~~
+
+### Tuning STP Convergence 
+~~~
+spanning-tree (vlan vlan-id) hello-time [sec]
+spanning-tree (vlan vlan-id) forward-time [sec]
+spanning-tree (vlan vlan-id) max-age [sec]
+
+spanning-tree vlan [vlan-list] root {pri | sec} (dia [d] (hello-time [sec]))
+~~~
+
+### STP link Convergence 
+
+~~~
+sw1(config)#spanning-tree ?
+  backbonefast  Enable BackboneFast Feature
+  portfast      Spanning tree portfast options
+  uplinkfast    Enable UplinkFast Feature
+~~~
+
+* __PortFast__ : Fast servers with SSD boots in 5-6 secs, but switch takes 30 sec to learn :( 
+    > * used for access layer switches connecting end-devices
+    > * can be enabled globally (all not trunk ports) but not recommended 
+    > * for interface specific 
+    
+    > ~~~
+    > interface [int-name]  
+    > spanning-tree portfast 
+        
+* __Uplink Fast__ : Switching between primary and backup link fast 
+    > * applicable for non RB. 
+    > * when primary link fails, dummy multicast is sent on 0100:0CCD:CDCD address
+    > * All CAM entries are advertised at backup link  
+    >~~~
+    > spanning-tree uplinkfast
+* __Backbone_Fast__ : Fast Convergence in __indirect__ link failure 
+    > * let A,B,C are connected as triangle, A be the RB
+    > * link A-C failed due to filtering etc
+    > * C didn't receive any bpdu untill its max-age 
+    > * C makes itself RB and generated BPDU to B (insignificant BPDU)
+    > * B receives two BPDU from A (root port) and C (blocking port)
+    > * in __Backbone-fast__ B sends a Root-link query (__RLQ__) to verify root liveliness to A
+    > * B __shorten__ the time and puts blocked port to forwarding state 
+
+# STP troubleshooting 
+## Types of STP ports 
+1. __Root port__ : port on switch, closest (with lowest path cost) to root bridge 
+2. __Designated port__ : port on LAN segment closest to root. Relays, forward and transmit BPDU down the tree
+3. __Blocking port__ : neither Root not Designated 
+4. __Alternate port__ : backup in the case of `Uplink-Fast`, ideally blocked 
+5. __Forwarding Port__ : where no STP is detected, connected to end=-users
+__Up/Down Stream__ : position on the STP tree, based on forwarding of BPDU 
+
+## Protecting against unexpected BPDU
+
+### Root Guard 
+* No way this can be a root port 
+* relay/ forward BPDU but can't receive 
+* by default disabled 
+* typically used to ignore a specific switch (legacy one) or untrusted port (security reason)
+~~~
+sw(config-if)spanning-tree guard root 
+sh spanning-tree inconsistenceport 
+~~~ 
+![](pics/roog_guard_1.png)
+
+* in this sample topology sw2 is the RB 
+* now prevent fa0/1 to be a root port  
+
+### BPDU Guard
+* Port fast : straightaway goes to forwarding state, always use on end-device 
+* port-fast is not same as disabling STP 
+* if BPDU guard is enabled on a portfast enabled interface, while __receiving any BPDU__ there, interface goes to __error-disable__ state
+* The guard is to maintain integrity. 
+* to enable BPDU-guard on all port fast interfaces `sw(config)# spanning-tree portfast bpduguard default`
+* if the interface is connected to a __hub__ then BPDU guard __can't protect__
+  as hubs don't use spanning tree, hence __no bpdu__
+
+## Protecting against sudden loss of BPDU
