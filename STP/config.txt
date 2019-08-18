@@ -1,0 +1,141 @@
+! sw0
+conf t
+	!------------------------------------------
+	!CREATING VLANS
+	!------------------------------------------
+	vlan 100
+	name sales
+	exit
+
+	vlan 200
+	name engg
+	exit
+
+	!------------------------------------------
+	!CREATING TRUNKS
+	!------------------------------------------
+	int range e0/0-1
+	sw tr encap dot
+	sw mode tr
+
+	!------------------------------------------
+	!ACTIVATING PVST
+	!------------------------------------------
+	spanning-tree mode pvst
+
+	!------------------------------------------
+	!ASSIGNING AS RB FOR VLAN 100
+	!------------------------------------------
+	spanning-tree vlan 100 root primary
+end
+
+! sw1
+conf t
+	!------------------------------------------
+	!CREATING VLANS
+	!------------------------------------------
+	vlan 100
+	name sales
+	exit
+
+	vlan 200
+	name engg
+	exit
+
+	!------------------------------------------
+	!CREATING ACCESS PORTS
+	!------------------------------------------
+	int e0/2
+	sw mode acc
+	sw acc vlan 100
+
+	int e1/0
+	sw mode acc
+	sw acc	vlan 200
+
+	!------------------------------------------
+	!CREATING TRUNKS
+	!------------------------------------------
+	int range e0/0-1, e0/3
+	sw tr encap dot
+	sw mode tr
+
+	!------------------------------------------
+	!ACTIVATING PVST
+	!------------------------------------------
+	spanning-tree mode pvst
+end
+
+! sw2
+conf t
+	!------------------------------------------
+	!CREATING VLANS
+	!------------------------------------------
+	vlan 100
+	name sales
+	exit
+
+	vlan 200
+	name engg
+	exit
+
+	!------------------------------------------
+	!CREATING ACCESS PORTS
+	!------------------------------------------
+	int e0/0
+	sw mode acc
+	sw acc vlan 100
+
+	int e0/3
+	sw mode acc
+	sw acc vlan 200
+
+	!------------------------------------------
+	!CREATING TRUNKS
+	!------------------------------------------
+	int range e0/1-2
+	sw tr encap dot
+	sw mode tr
+
+	!------------------------------------------
+	!ACTIVATING PVST
+	!------------------------------------------
+	!spanning-tree mode pvst
+end
+
+! sw3
+conf t
+	!------------------------------------------
+	!CREATING VLANS
+	!------------------------------------------
+	vlan 100
+	name sales
+	exit
+
+	vlan 200
+	name engg
+	exit
+
+	!------------------------------------------
+	!CREATING TRUNKS
+	!------------------------------------------
+	int range e0/0-1
+	sw tr encap dot
+	sw mode tr
+
+	!------------------------------------------
+	!ACTIVATING PVST
+	!------------------------------------------
+	spanning-tree mode pvst
+
+	!------------------------------------------
+	!ASSIGNING AS RB FOR VLAN 200
+	!------------------------------------------
+	spanning-tree vlan 200 root primary
+
+end
+
+
+
+
+
