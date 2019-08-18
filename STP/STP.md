@@ -425,4 +425,143 @@ typically used in lab environment for testing
 
 # RSTP & MSTP (Rapid/multiple Spanning Tree)
 ## RSTP 
-* 802.1d 
+* 802.1d was the initial design (30 sec is not acceptable delay)
+* 802.1w was developed called RSTP (faster convergence)
+* Can be run on multiple instance (PVST+, RPVST+)
+### port types
+1. Discard / blocking 
+2. Learning 
+3. Forwarding 
+
+### port roles
+* root ports 
+* designated port (p2p port)
+* alternate port
+* backup port 
+* edge port (single host)
+
+### RSTP synchronisation 
+![](pics/rstp.png)
+1. proposal is sent from a switch connected to a RB 
+2. proposal is received, if bpdu is superior then all non-edge ports become blocking and 
+send ack to upstream switch making the receiving port into forwarding 
+3. then creates its own BPDU and sends to its downstream switches 
+
+### differences in BPDU mechanism 
+1. BPDU is sent out every interface at hello timer, all switch sends BPDU not just RB
+2. any switch maintains topology (like OSPF)
+3. if 2 bpdu is missed in a row the neighbour is presumed to be dead 
+
+~~~
+switch(config)# spanning-tree mode rapid-pvst
+~~~
+
+### Test
+* First shut interface `e0/1` while pinging from `192.168.100.10` to `192.168.100.20`
+* 25 packets were missed 
+   ~~~
+    84 bytes from 192.168.100.20 icmp_seq=64 ttl=64 time=1.519 ms
+    192.168.100.20 icmp_seq=65 timeout
+    192.168.100.20 icmp_seq=66 timeout
+    192.168.100.20 icmp_seq=67 timeout
+    192.168.100.20 icmp_seq=68 timeout
+    192.168.100.20 icmp_seq=69 timeout
+    192.168.100.20 icmp_seq=70 timeout
+    192.168.100.20 icmp_seq=71 timeout
+    192.168.100.20 icmp_seq=72 timeout
+    192.168.100.20 icmp_seq=73 timeout
+    192.168.100.20 icmp_seq=74 timeout
+    192.168.100.20 icmp_seq=75 timeout
+    192.168.100.20 icmp_seq=76 timeout
+    192.168.100.20 icmp_seq=77 timeout
+    192.168.100.20 icmp_seq=78 timeout
+    192.168.100.20 icmp_seq=79 timeout
+    192.168.100.20 icmp_seq=80 timeout
+    192.168.100.20 icmp_seq=81 timeout
+    192.168.100.20 icmp_seq=82 timeout
+    192.168.100.20 icmp_seq=83 timeout
+    192.168.100.20 icmp_seq=84 timeout
+    192.168.100.20 icmp_seq=85 timeout
+    192.168.100.20 icmp_seq=86 timeout
+    192.168.100.20 icmp_seq=87 timeout
+    192.168.100.20 icmp_seq=88 timeout
+    84 bytes from 192.168.100.20 icmp_seq=89 ttl=64 time=1.872 ms
+    ~~~
+* now change to `rapid-pvst` on all switch 
+* 2 packets missed 
+    ~~~
+    84 bytes from 192.168.100.20 icmp_seq=7 ttl=64 time=1.606 ms
+    192.168.100.20 icmp_seq=8 timeout
+    192.168.100.20 icmp_seq=9 timeout
+    84 bytes from 192.168.100.20 icmp_seq=10 ttl=64 time=1.995 ms
+    ~~~
+
+### Showing CPU Utilization 
+~~~
+sw1#sh processes cpu history 
+                                                                       
+  100                                                           
+   90                                                           
+   80                                                           
+   70                                                           
+   60                                                           
+   50                                                           
+   40                                                           
+   30                                                           
+   20                                                           
+   10                                                           
+     0....5....1....1....2....2....3....3....4....4....5....5....6
+               0    5    0    5    0    5    0    5    0    5    0
+               CPU% per second (last 60 seconds)
+                                                              
+  100                                                           
+   90                                                           
+   80                                                           
+   70                                                           
+   60                                                           
+   50                                                           
+   40                                                           
+   30                                                           
+   20                                                           
+   10                                                           
+     0....5....1....1....2....2....3....3....4....4....5....5....6
+               0    5    0    5    0    5    0    5    0    5    0
+               CPU% per minute (last 60 minutes)
+              * = maximum CPU%   # = average CPU%
+                                                                              
+            8                                                                 
+            0                                                                 
+  100                                                                       
+   90                                                                       
+   80       *                                                               
+   70       *                                                               
+   60       *                                                               
+   50       *                                                               
+   40       *                                                               
+   30       *                                                               
+   20       *                                                               
+   10       *                                                               
+     0....5....1....1....2....2....3....3....4....4....5....5....6....6....7..
+               0    5    0    5    0    5    0    5    0    5    0    5    0  
+                   CPU% per hour (last 72 hours)
+                  * = maximum CPU%   # = average CPU%
+~~~
+
+## MST 
+* open standard 802.1s
+* for 500 VLANS, PVST runs 500 instance of STP 
+* MST can group them instance 1 for VLAN 1-100 ... 5 for 401-500 etc 
+* Cisco supports at most 16 MST instance 
+* Each group is called __Region__
+* instace 0 runs by default including all VLANS (0-4096)
+
+ ### config 
+ ~~~
+ spanning-tree mode mst 
+ spanning-tree most config 
+ ! region name & revesion number  must match 
+    name [region1]
+    rev [1]
+    instance 1 vlan 101,102
+    instance 2 vlan 103,104
+ ~~~
